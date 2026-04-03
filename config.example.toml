@@ -1,0 +1,9 @@
+# SNX Configuration File
+# Place this file at: ~/.config/snx/config.toml
+# All settings have sane defaults and this file is optional.
+
+# snippet_dir: Directory where your executable snippets are stored.
+# SNX will look here for executables to run and list.
+# Default: ~/.local/share/snx/snippets
+#
+# snippet_dir = "~/.local/share/snx/snippets"
