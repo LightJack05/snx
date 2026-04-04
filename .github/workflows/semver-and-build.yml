@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  semver:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    outputs:
+      tag: ${{ steps.tag_version.outputs.new_tag }}
+      version: ${{ steps.tag_version.outputs.new_version }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish Release
+        uses: ncipollo/release-action@v1
+        with:
+          generateReleaseNotes: true
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          prerelease: false
+          draft: false
+
+  build-binary:
+    needs: semver
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.25.0"
+
+      - name: Build binary
+        run: CGO_ENABLED=0 go build -trimpath -ldflags="-s -w -X main.version=${{ needs.semver.outputs.version }}" -o snx-linux-amd64 .
+
+      - name: Upload binary to release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.semver.outputs.tag }}
+          allowUpdates: true
+          artifacts: "snx-linux-amd64"
+          omitBody: true
+          omitName: true
+
+  build-pkgbuild:
+    needs: semver
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm go git base-devel
+
+      - name: Create non-root build user
+        run: useradd -m builder && echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+      - name: Prepare PKGBUILD
+        run: |
+          cp packaging/* /home/builder/
+          sed -i "s/^pkgver=.*/pkgver=${{ needs.semver.outputs.version }}/" /home/builder/PKGBUILD
+          chown -R builder:builder /home/builder
+
+      - name: Build package
+        run: su builder -c "cd /home/builder && makepkg -s --noconfirm"
+
+      - name: Upload package to release
+        run: |
+          PKG=$(find /home/builder -name "*.pkg.tar.zst" | head -1)
+          echo "PKG_PATH=$PKG" >> $GITHUB_ENV
+
+      - name: Attach package to release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ needs.semver.outputs.tag }}
+          allowUpdates: true
+          artifacts: ${{ env.PKG_PATH }}
+          omitBody: true
+          omitName: true
