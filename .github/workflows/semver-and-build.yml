@@ -37,6 +37,8 @@ jobs:
   build-binary:
     needs: semver
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
@@ -61,6 +63,8 @@ jobs:
     needs: semver
     runs-on: ubuntu-latest
     container: archlinux:latest
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v4
