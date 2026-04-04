@@ -69,7 +69,7 @@ jobs:
         run: pacman -Syu --noconfirm go git base-devel
 
       - name: Create non-root build user
-        run: useradd -m builder && echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+        run: "useradd -m builder && echo 'builder ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers"
 
       - name: Prepare PKGBUILD
         run: |
