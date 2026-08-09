@@ -18,6 +18,22 @@ makepkg -si
 
 This installs the binary to `/usr/bin/snx` and places completion files in the system completion directories automatically.
 
+### Nix (flake)
+
+Run it directly without installing:
+
+```sh
+nix run github:LightJack05/snx -- --help
+```
+
+Or install it into your profile:
+
+```sh
+nix profile install github:LightJack05/snx
+```
+
+In a flake-based NixOS/home-manager configuration, add this repository as an input and use `snx.packages.${system}.snx` (or the provided `overlays.default`). The package installs the bash and zsh completion files into the standard system completion directories, so completions work out of the box.
+
 ### Other Linux (binary from GitHub Releases)
 
 Download the latest binary from the [GitHub Releases page](https://github.com/LightJack05/snx/releases) and install it:
